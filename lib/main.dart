@@ -1,122 +1,296 @@
+// lib/main.dart
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 
-void main() {
+import 'core/injectable.dart';
+import 'module/atendimento/infra/controller/atendimento_controller.dart';
+import 'module/atendimento/state/atendimento_state.dart';
+import 'module/atendimento/core/domain/model/atendimento.dart';
+
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await configureDependencies();
   runApp(const MyApp());
 }
 
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
 
-  // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Flutter Demo',
-      theme: ThemeData(
-        // This is the theme of your application.
-        //
-        // TRY THIS: Try running your application with "flutter run". You'll see
-        // the application has a purple toolbar. Then, without quitting the app,
-        // try changing the seedColor in the colorScheme below to Colors.green
-        // and then invoke "hot reload" (save your changes or press the "hot
-        // reload" button in a Flutter-supported IDE, or press "r" if you used
-        // the command line to start the app).
-        //
-        // Notice that the counter didn't reset back to zero; the application
-        // state is not lost during the reload. To reset the state, use hot
-        // restart instead.
-        //
-        // This works for code too, not just values: Most code changes can be
-        // tested with just a hot reload.
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
+      title: 'Atendimentos',
+      theme: ThemeData(useMaterial3: true, colorSchemeSeed: Colors.blue),
+      home: BlocProvider(
+        create: (_) => getIt<AtendimentoController>()..carregarAtendimentos(),
+        child: const AtendimentoHomePage(),
       ),
-      home: const MyHomePage(title: 'Flutter Demo Home Page'),
     );
   }
 }
 
-class MyHomePage extends StatefulWidget {
-  const MyHomePage({super.key, required this.title});
-
-  // This widget is the home page of your application. It is stateful, meaning
-  // that it has a State object (defined below) that contains fields that affect
-  // how it looks.
-
-  // This class is the configuration for the state. It holds the values (in this
-  // case the title) provided by the parent (in this case the App widget) and
-  // used by the build method of the State. Fields in a Widget subclass are
-  // always marked "final".
-
-  final String title;
+class AtendimentoHomePage extends StatefulWidget {
+  const AtendimentoHomePage({super.key});
 
   @override
-  State<MyHomePage> createState() => _MyHomePageState();
+  State<AtendimentoHomePage> createState() => _AtendimentoHomePageState();
 }
 
-class _MyHomePageState extends State<MyHomePage> {
-  int _counter = 0;
-
-  void _incrementCounter() {
-    setState(() {
-      // This call to setState tells the Flutter framework that something has
-      // changed in this State, which causes it to rerun the build method below
-      // so that the display can reflect the updated values. If we changed
-      // _counter without calling setState(), then the build method would not be
-      // called again, and so nothing would appear to happen.
-      _counter++;
-    });
-  }
+class _AtendimentoHomePageState extends State<AtendimentoHomePage> {
+  bool _somenteAtivos = false;
 
   @override
   Widget build(BuildContext context) {
-    // This method is rerun every time setState is called, for instance as done
-    // by the _incrementCounter method above.
-    //
-    // The Flutter framework has been optimized to make rerunning build methods
-    // fast, so that you can just rebuild anything that needs updating rather
-    // than having to individually change instances of widgets.
+    final controller = context.read<AtendimentoController>();
+
     return Scaffold(
       appBar: AppBar(
-        // TRY THIS: Try changing the color here to a specific color (to
-        // Colors.amber, perhaps?) and trigger a hot reload to see the AppBar
-        // change color while the other colors stay the same.
-        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-        // Here we take the value from the MyHomePage object that was created by
-        // the App.build method, and use it to set our appbar title.
-        title: Text(widget.title),
+        title: const Text('Atendimentos'),
+        actions: [
+          Row(
+            children: [
+              const Text('Somente ativos'),
+              Switch(
+                value: _somenteAtivos,
+                onChanged: (value) {
+                  setState(() => _somenteAtivos = value);
+
+                  // usa filtrarAtivos e carregarAtendimentos
+                  if (value) {
+                    controller.filtrarAtivos(true);
+                  } else {
+                    controller.carregarAtendimentos();
+                  }
+                },
+              ),
+              const SizedBox(width: 8),
+            ],
+          ),
+        ],
       ),
-      body: Center(
-        // Center is a layout widget. It takes a single child and positions it
-        // in the middle of the parent.
-        child: Column(
-          // Column is also a layout widget. It takes a list of children and
-          // arranges them vertically. By default, it sizes itself to fit its
-          // children horizontally, and tries to be as tall as its parent.
-          //
-          // Column has various properties to control how it sizes itself and
-          // how it positions its children. Here we use mainAxisAlignment to
-          // center the children vertically; the main axis here is the vertical
-          // axis because Columns are vertical (the cross axis would be
-          // horizontal).
-          //
-          // TRY THIS: Invoke "debug painting" (choose the "Toggle Debug Paint"
-          // action in the IDE, or press "p" in the console), to see the
-          // wireframe for each widget.
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: <Widget>[
-            const Text('You have pushed the button this many times:'),
-            Text(
-              '$_counter',
-              style: Theme.of(context).textTheme.headlineMedium,
-            ),
-          ],
-        ),
+      body: BlocBuilder<AtendimentoController, AtendimentoState>(
+        builder: (context, state) {
+          if (state is AtendimentoLoadingState) {
+            return const Center(child: CircularProgressIndicator());
+          }
+
+          List<Atendimento> lista = [];
+
+          if (state is AtendimentoLoadedState) {
+            lista = state.atendimentos;
+          } else if (state is AtendimentoFilteredState) {
+            lista = state.atendimentos;
+          }
+
+          if (lista.isEmpty) {
+            return const Center(child: Text('Nenhum atendimento cadastrado.'));
+          }
+
+          return ListView.separated(
+            itemCount: lista.length,
+            separatorBuilder: (_, __) => const Divider(height: 1),
+            itemBuilder: (context, index) {
+              final it = lista[index];
+
+              return ListTile(
+                title: Text(it.nome),
+                subtitle: Text(
+                  [
+                    if (it.descricao != null && it.descricao!.isNotEmpty)
+                      it.descricao!,
+                    'Preço: R\$ ${it.preco.toStringAsFixed(2)}',
+                    if (it.data != null) 'Data: ${it.data}',
+                  ].join(' • '),
+                ),
+                leading: Checkbox(
+                  value: it.ativo,
+                  onChanged: (value) {
+                    if (value == null) return;
+                    // usa alterarAtivo
+                    controller.alterarAtivo(it.id, value);
+                  },
+                ),
+                trailing: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    IconButton(
+                      tooltip: 'Editar',
+                      icon: const Icon(Icons.edit),
+                      onPressed: () => _abrirFormAtendimento(context, it),
+                    ),
+                    IconButton(
+                      tooltip: 'Excluir',
+                      icon: const Icon(Icons.delete, color: Colors.red),
+                      onPressed: () async {
+                        final confirmar = await showDialog<bool>(
+                          context: context,
+                          builder: (ctx) => AlertDialog(
+                            title: const Text('Excluir atendimento'),
+                            content: Text(
+                              'Tem certeza que deseja excluir "${it.nome}"?',
+                            ),
+                            actions: [
+                              TextButton(
+                                onPressed: () => Navigator.pop(ctx, false),
+                                child: const Text('Cancelar'),
+                              ),
+                              TextButton(
+                                onPressed: () => Navigator.pop(ctx, true),
+                                child: const Text(
+                                  'Excluir',
+                                  style: TextStyle(color: Colors.red),
+                                ),
+                              ),
+                            ],
+                          ),
+                        );
+
+                        if (confirmar == true) {
+                          // usa excluirAtendimento
+                          await controller.excluirAtendimento(it.id);
+                        }
+                      },
+                    ),
+                  ],
+                ),
+                onTap: () => _abrirFormAtendimento(context, it),
+              );
+            },
+          );
+        },
       ),
       floatingActionButton: FloatingActionButton(
-        onPressed: _incrementCounter,
-        tooltip: 'Increment',
+        onPressed: () => _abrirFormAtendimento(context, null),
         child: const Icon(Icons.add),
-      ), // This trailing comma makes auto-formatting nicer for build methods.
+      ),
+    );
+  }
+
+  Future<void> _abrirFormAtendimento(
+    BuildContext context,
+    Atendimento? atendimento,
+  ) async {
+    final controller = context.read<AtendimentoController>();
+
+    final nomeCtrl = TextEditingController(text: atendimento?.nome ?? '');
+    final descCtrl = TextEditingController(text: atendimento?.descricao ?? '');
+    final precoCtrl = TextEditingController(
+      text: atendimento != null ? atendimento.preco.toString() : '',
+    );
+    bool ativo = atendimento?.ativo ?? true;
+
+    await showDialog<void>(
+      context: context,
+      builder: (dialogCtx) {
+        return AlertDialog(
+          title: Text(
+            atendimento == null ? 'Novo atendimento' : 'Editar atendimento',
+          ),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                TextField(
+                  controller: nomeCtrl,
+                  decoration: const InputDecoration(labelText: 'Nome'),
+                ),
+                const SizedBox(height: 8),
+                TextField(
+                  controller: descCtrl,
+                  decoration: const InputDecoration(labelText: 'Descrição'),
+                ),
+                const SizedBox(height: 8),
+                TextField(
+                  controller: precoCtrl,
+                  keyboardType: const TextInputType.numberWithOptions(
+                    decimal: true,
+                  ),
+                  decoration: const InputDecoration(labelText: 'Preço'),
+                ),
+                const SizedBox(height: 8),
+                Row(
+                  children: [
+                    const Text('Ativo'),
+                    const SizedBox(width: 8),
+                    Switch(
+                      value: ativo,
+                      onChanged: (value) {
+                        ativo = value;
+                        // forçar rebuild do AlertDialog
+                        (dialogCtx as Element).markNeedsBuild();
+                      },
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(dialogCtx),
+              child: const Text('Cancelar'),
+            ),
+            TextButton(
+              onPressed: () async {
+                final nome = nomeCtrl.text.trim();
+                final precoTexto = precoCtrl.text.trim();
+
+                if (nome.isEmpty || precoTexto.isEmpty) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Nome e preço são obrigatórios'),
+                    ),
+                  );
+                  return;
+                }
+
+                final preco =
+                    double.tryParse(precoTexto.replaceAll(',', '.')) ?? 0.0;
+
+                final agora = DateTime.now().toIso8601String();
+
+                if (atendimento == null) {
+                  // usa inserirAtendimento
+                  final novo = Atendimento(
+                    id: 0, // será sobrescrito no repository
+                    nome: nome,
+                    descricao: descCtrl.text.trim().isEmpty
+                        ? null
+                        : descCtrl.text.trim(),
+                    data: agora,
+                    ativo: ativo,
+                    preco: preco,
+                    foto: null,
+                  );
+                  await controller.inserirAtendimento(novo);
+                } else {
+                  // usa editarAtendimento
+                  final atualizado = Atendimento(
+                    id: atendimento.id,
+                    nome: nome,
+                    descricao: descCtrl.text.trim().isEmpty
+                        ? null
+                        : descCtrl.text.trim(),
+                    data: atendimento.data ?? agora,
+                    ativo: ativo,
+                    preco: preco,
+                    foto: atendimento.foto,
+                  );
+                  await controller.editarAtendimento(
+                    atendimento.id,
+                    atualizado,
+                  );
+                }
+
+                if (context.mounted) {
+                  Navigator.pop(dialogCtx);
+                }
+              },
+              child: const Text('Salvar'),
+            ),
+          ],
+        );
+      },
     );
   }
 }

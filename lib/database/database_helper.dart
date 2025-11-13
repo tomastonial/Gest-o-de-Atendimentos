@@ -4,13 +4,13 @@ import 'package:path/path.dart';
 
 class DatabaseHelper {
   static const int _version = 1;
-  static const String _dbName = "atendimetos.db";
+  static const String _dbName = "atendimento.db";
 
   static Future<Database> _getDB() async {
     return openDatabase(
       join(await getDatabasesPath(), _dbName),
       onCreate: (db, version) async => await db.execute(
-        "CREATE TABLE atendimento (id INTEGER PRIMARY KEY AUTOINCREMENT, nome TEXT NOT NULL, descricao TEXT, data TEXT, ativo BOOLEAN, preco DOUBLE NOT NULL, foto TEXT);",
+        "CREATE TABLE atendimento (id INTEGER PRIMARY KEY AUTOINCREMENT, nome TEXT NOT NULL, descricao TEXT, data TEXT, ativo INTEGER, preco REAL NOT NULL, foto TEXT);",
       ),
       version: _version,
     );

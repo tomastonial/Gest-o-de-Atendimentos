@@ -33,6 +33,20 @@ import 'package:atendimentos_flutter/module/atendimento/core/domain/usecase/inse
     as _i578;
 import 'package:atendimentos_flutter/module/atendimento/core/domain/usecase/listar_atendimento_usecase.dart'
     as _i1015;
+import 'package:atendimentos_flutter/module/atendimento/infra/controller/atendimento_controller.dart'
+    as _i333;
+import 'package:atendimentos_flutter/module/atendimento/infra/data/repository/alterar_ativo_repository_impl.dart'
+    as _i522;
+import 'package:atendimentos_flutter/module/atendimento/infra/data/repository/editar_atendimento_repository_impl.dart'
+    as _i17;
+import 'package:atendimentos_flutter/module/atendimento/infra/data/repository/excluir_atendimento_repository_impl.dart'
+    as _i628;
+import 'package:atendimentos_flutter/module/atendimento/infra/data/repository/filtro_ativo_repository_impl.dart'
+    as _i234;
+import 'package:atendimentos_flutter/module/atendimento/infra/data/repository/inserir_atendimento_repository_impl.dart'
+    as _i43;
+import 'package:atendimentos_flutter/module/atendimento/infra/data/repository/listar_atendimento_repository_impl.dart'
+    as _i805;
 import 'package:get_it/get_it.dart' as _i174;
 import 'package:injectable/injectable.dart' as _i526;
 
@@ -43,6 +57,47 @@ extension GetItInjectableX on _i174.GetIt {
     _i526.EnvironmentFilter? environmentFilter,
   }) {
     final gh = _i526.GetItHelper(this, environment, environmentFilter);
+    gh.factory<_i338.InserirAtendimentoRepository>(
+      () => _i43.InserirAtendimentoRepositoryImpl(),
+    );
+    gh.factory<_i487.FiltroAtivoRepository>(
+      () => _i234.FiltroAtivoRepositoryImpl(),
+    );
+    gh.factory<_i964.ListarAtendimentoRepository>(
+      () => _i805.ListarAtendimentoRepositoryImpl(),
+    );
+    gh.factory<_i1058.EditarAtendimentoRepository>(
+      () => _i17.EditarAtendimentoRepositoryImpl(),
+    );
+    gh.factory<_i562.AlterarAtivoRepository>(
+      () => _i522.AlterarAtivoRepositoryImpl(),
+    );
+    gh.factory<_i166.ExcluirAtendimentoRepository>(
+      () => _i628.ExcluirAtendimentoRepositoryImpl(),
+    );
+    gh.factory<_i399.FiltroAtivoUsecase>(
+      () => _i399.FiltroAtivoUsecase(gh<_i487.FiltroAtivoRepository>()),
+    );
+    gh.factory<_i578.InserirAtendimentoUsecase>(
+      () => _i578.InserirAtendimentoUsecase(
+        gh<_i338.InserirAtendimentoRepository>(),
+      ),
+    );
+    gh.factory<_i333.AtendimentoController>(
+      () => _i333.AtendimentoController(
+        inserirAtendimentoRepository: gh<_i338.InserirAtendimentoRepository>(),
+        listarAtendimentoRepository: gh<_i964.ListarAtendimentoRepository>(),
+        editarAtendimentoRepository: gh<_i1058.EditarAtendimentoRepository>(),
+        excluirAtendimentoRepository: gh<_i166.ExcluirAtendimentoRepository>(),
+        alterarAtivoRepository: gh<_i562.AlterarAtivoRepository>(),
+        filtroAtivoRepository: gh<_i487.FiltroAtivoRepository>(),
+      ),
+    );
+    gh.factory<_i1015.ListarAtendimentoUsecase>(
+      () => _i1015.ListarAtendimentoUsecase(
+        gh<_i964.ListarAtendimentoRepository>(),
+      ),
+    );
     gh.factory<_i919.AlterarAtivoUsecase>(
       () => _i919.AlterarAtivoUsecase(gh<_i562.AlterarAtivoRepository>()),
     );
@@ -54,19 +109,6 @@ extension GetItInjectableX on _i174.GetIt {
     gh.factory<_i978.ExcluirAtendimentoUsecase>(
       () => _i978.ExcluirAtendimentoUsecase(
         gh<_i166.ExcluirAtendimentoRepository>(),
-      ),
-    );
-    gh.factory<_i399.FiltroAtivoUsecase>(
-      () => _i399.FiltroAtivoUsecase(gh<_i487.FiltroAtivoRepository>()),
-    );
-    gh.factory<_i578.InserirAtendimentoUsecase>(
-      () => _i578.InserirAtendimentoUsecase(
-        gh<_i338.InserirAtendimentoRepository>(),
-      ),
-    );
-    gh.factory<_i1015.ListarAtendimentoUsecase>(
-      () => _i1015.ListarAtendimentoUsecase(
-        gh<_i964.ListarAtendimentoRepository>(),
       ),
     );
     return this;
