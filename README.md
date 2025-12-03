@@ -15,16 +15,6 @@ O objetivo do projeto é fornecer uma maneira simples de gerenciar atendimentos 
 - **Ativar/Desativar Atendimento**: Marca um atendimento como ativo ou inativo.
 - **Filtrar Atendimentos**: Exibe apenas os atendimentos ativos ou inativos.
 
-## Rotas
-
-1. **Home (Tela Principal)**:
-   - **URL**: `/`
-   - **Descrição**: Lista todos os atendimentos com opções para editar, excluir ou ativar/desativar.
-
-2. **Cadastro/edição de Atendimento**:
-   - **URL**: `/atendimento/{id}`
-   - **Descrição**: Formulário para criar ou editar um atendimento.
-
 ## Tecnologias
 
 - **Flutter**: Framework para desenvolvimento do app.
